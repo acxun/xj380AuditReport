@@ -63,15 +63,15 @@
 
 ```mermaid
 flowchart TD
-    A[XJ380] --> B{内核类型}
-    B -->|宏内核 Monolithic| C[驱动/FS/网络/图形全部内核态<br/>或经 dlinker 加载为内核模块]
-    B -->|微内核| D[否：无独立服务进程]
-    A --> F{运行模型}
-    F --> G[静态链接 freestanding ELF<br/>-nostdlib -ffreestanding]
-    A --> H{用户态}
-    H --> I[Linux x86_64 syscall ABI 兼容<br/>+ 自研 XAPI GUI 系统调用]
-    A --> J{生态}
-    J --> K[内嵌 Void Linux xbps 包管理器<br/>+ busybox + 宿主工具链自举]
+    A["XJ380"] --> B{"内核类型"}
+    B -->|宏内核 Monolithic| C["驱动/FS/网络/图形全部内核态<br/>或经 dlinker 加载为内核模块"]
+    B -->|微内核| D["否：无独立服务进程"]
+    A --> F{"运行模型"}
+    F --> G["静态链接 freestanding ELF<br/>-nostdlib -ffreestanding"]
+    A --> H{"用户态"}
+    H --> I["Linux x86_64 syscall ABI 兼容<br/>+ 自研 XAPI GUI 系统调用"]
+    A --> J{"生态"}
+    J --> K["内嵌 Void Linux xbps 包管理器<br/>+ busybox + 宿主工具链自举"]
 ```
 
 **判定：自研宏内核（Monolithic Kernel），类 Linux 架构 + 图形置于内核态的混合设计。**
@@ -532,27 +532,27 @@ UEFI 固件 (OVMF.fd) ──> boot/bootx64.c efi_main ──> 自建页表 + 高
 ```mermaid
 flowchart TB
     subgraph HW[硬件层]
-        H1[x86_64 CPU] --> H2[UEFI 固件 OVMF]
-        H2 --> H3[AHCI/NVMe/IDE 磁盘]
-        H2 --> H4[PCIe/APIC/HPET]
+        H1["x86_64 CPU"] --> H2["UEFI 固件 OVMF"]
+        H2 --> H3["AHCI/NVMe/IDE 磁盘"]
+        H2 --> H4["PCIe/APIC/HPET"]
     end
     subgraph BOOT[引导层]
-        B[BOOTX64.EFI / efi_main<br/>自建页表+高半区别名+ACPI+MTRR]
+        B["BOOTX64.EFI / efi_main<br/>自建页表+高半区别名+ACPI+MTRR"]
     end
     subgraph KERNEL[内核层]
-        K1[KernelMain 全同步初始化]
-        K2[内存: HHDM/帧位图/buddy(禁用)/<br/>talc堆/4级页表/VMA/按需分页]
-        K3[任务: EEVDF/每CPU队列/PCB-TCB]
-        K4[中断: IDT/APIC/IOAPIC/8259A/HPET]
-        K5[VFS + FatFs + 伪文件系统族]
-        K6[syscall 分发: Linux ABI + XAPI + SXAH]
-        K7[内核态 GUI: Sheet/XWM/SVG/控件]
-        K8[dlinker 模块加载 .ksymtab]
+        K1["KernelMain 全同步初始化"]
+        K2["内存: HHDM/帧位图/buddy(禁用)/<br/>talc堆/4级页表/VMA/按需分页"]
+        K3["任务: EEVDF/每CPU队列/PCB-TCB"]
+        K4["中断: IDT/APIC/IOAPIC/8259A/HPET"]
+        K5["VFS + FatFs + 伪文件系统族"]
+        K6["syscall 分发: Linux ABI + XAPI + SXAH"]
+        K7["内核态 GUI: Sheet/XWM/SVG/控件"]
+        K8["dlinker 模块加载 .ksymtab"]
     end
     subgraph USER[用户层]
-        U1[xapi 运行时 + crt0]
-        U2[GUI 应用/浏览器/Rust 应用]
-        U3[Linux ELF: busybox/fastfetch/musl/glibc 工具链]
+        U1["xapi 运行时 + crt0"]
+        U2["GUI 应用/浏览器/Rust 应用"]
+        U3["Linux ELF: busybox/fastfetch/musl/glibc 工具链"]
     end
     H2 --> B --> K1
     K1 --> K2 & K3 & K4 & K5 & K6 & K7 & K8
@@ -876,17 +876,17 @@ efi_main ──> 协议(GOP/SFSP/LIP/SPP/BAT) ──> 300ms 等 DELETE 引导菜
 
 ```mermaid
 flowchart LR
-    A[攻击面] --> B[用户态 → syscall<br/>100+ Linux ABI + XAPI + SXAH]
-    A --> C[ELF/模块加载器<br/>execve + dlinker]
-    A --> D[文件系统<br/>VFS/FATFS/伪文件]
-    A --> E[网络<br/>lwIP/e1000/socket/DNS]
-    A --> F[引导<br/>EFI 镜像解析]
-    A --> G[浏览器<br/>litehtml/SVG/图片解析]
-    B --> H[提权路径 LPE]
+    A["攻击面"] --> B["用户态 → syscall<br/>100+ Linux ABI + XAPI + SXAH"]
+    A --> C["ELF/模块加载器<br/>execve + dlinker"]
+    A --> D["文件系统<br/>VFS/FATFS/伪文件"]
+    A --> E["网络<br/>lwIP/e1000/socket/DNS"]
+    A --> F["引导<br/>EFI 镜像解析"]
+    A --> G["浏览器<br/>litehtml/SVG/图片解析"]
+    B --> H["提权路径 LPE"]
     D --> H
-    C --> I[内核内存破坏<br/>ELF 零校验/重定位不完整]
-    G --> J[内存/CPU DoS<br/>无上限缓存/大参数三角]
-    E --> K[MITM<br/>弱熵+免证书有效期]
+    C --> I["内核内存破坏<br/>ELF 零校验/重定位不完整"]
+    G --> J["内存/CPU DoS<br/>无上限缓存/大参数三角"]
+    E --> K["MITM<br/>弱熵+免证书有效期"]
 ```
 
 **提权路径（LPE）**：任意用户进程 → `open("/system/config/usereg.dat")`（无权限检查）→ 读明文密码 → 以管理员登录 → 调用 SXAH 特权接口 / 写 `/apps/*.elf` 替换系统程序 → 下次启动以内核态入口执行。**本系统当前无任何有效安全边界**——所有"权限"字段是摆设。
