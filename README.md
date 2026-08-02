@@ -95,8 +95,8 @@ flowchart TD
 | 来源 | 影响面 | 证据 |
 |---|---|---|
 | 于渊《自己动手写操作系统》(Orange'S OS) | 项目起点（2023 年树布局 boot/drivers/gui/include/kernel/lib 与其同构；后续重写为 64 位） | `[git]` 2023-08-01 树结构 + 早期 commit |
-| 《30天自制操作系统》(Haribote) | **概念/命名影响**（图层系统 sheet_num"图层数量-1"、lift_sheet、刷新/置顶机制）+ `cp537.cpp` 直接移植（`s/v/_/e` 位宏）；**hankaku 字库与鼠标光标逐字节比对 ≠ Haribote**（见 §5.4） | `[代码]` sheet.cpp/cp537.cpp |
-| MikanOS《ゼロからのOS自作入門》 | **FrameBufferConfig 结构逐字段一致 + `CalcLoadAddressRange`/`CopyLoadSegments` 函数同名同逻辑（已源码比对证实）**、`KernelMain(const FrameBufferConfig&)` 启动约定 | `[代码]` boot/elf.h、efi/fbc.h（见 §5.4） |
+| 《30天自制操作系统》(Haribote) | **概念/命名影响**（图层系统 sheet_num"图层数量-1"、lift_sheet、刷新/置顶机制）+ `cp537.cpp` 直接移植（`s/v/_/e` 位宏）；**hankaku 字库/鼠标光标逐字节比对 ≠ Haribote（字库实为 MikanOS 同款，见 §5.4）** | `[代码]` sheet.cpp/cp537.cpp |
+| MikanOS《ゼロからのOS自作入門》 | **FrameBufferConfig 结构逐字段一致 + `CalcLoadAddressRange`/`CopyLoadSegments` 函数同名同逻辑（已源码比对证实）**、`KernelMain(const FrameBufferConfig&)` 启动约定、**hankaku 8×16 字库逐字节一致（0% 差异）** | `[代码]` boot/elf.h、efi/fbc.h、font/hankaku.bin（见 §5.4） |
 | OSDev Wiki | 串口/PCI/AHCI/NVMe/APIC/SMP 教程结构 | `[代码]` bootlib.c、pci/ahci/nvme/smp |
 | Linux | EEVDF 调度、VMA、zones、capget/setuid、procfs、EXPORT_SYMBOL、信号 | `[代码]` scheduler.cpp/vma.cpp/buddy.cpp/sys.cpp |
 | Plan 9 / suckless libutf | utflib.cpp（chartorune/utftab，保留 "See LICENSE file" 版权头） | `[代码]` kernel/utflib.cpp |
@@ -184,7 +184,7 @@ UEFI 固件 (OVMF.fd) ──> boot/bootx64.c efi_main ──> 自建页表 + 高
 - 图层合成器（sheet.cpp 1147 行）：链表式新设计 + 脏矩形队列/双缓冲；受 Haribote 图层**概念**影响（sheet_num/lift_sheet 命名），非代码复制（见 §5.4）。
 - 窗口管理器（windowm.cpp 1392 行）：Windows 消息模型，Alt+Tab/最大化/显示桌面。
 - **svg.cpp（2473 行）自研 SVG 光栅化器**：贝塞尔展平/非零环绕/超采样抗锯齿/路径穿越防护——全项目原创度最高的文件之一。
-- font：自备 8×16 hankaku 点阵（**非 Haribote 同款**，逐字节比对 58% 不同，见 §5.4）+ stb_truetype v1.26 原版 + **自研 ttf_validate_font_data 校验层**（缓解 stb_ttf 无安全保证，值得肯定）；TTF 每次调用分配 2560×1440×1 ≈ 3.7MB 位图（性能问题）。
+- font：自备 8×16 hankaku 点阵（**与 MikanOS 字库逐字节一致 0%，非 Haribote 同款**——经官方 makefont.exe 验证，见 §5.4）+ stb_truetype v1.26 原版 + **自研 ttf_validate_font_data 校验层**（缓解 stb_ttf 无安全保证，值得肯定）；TTF 每次调用分配 2560×1440×1 ≈ 3.7MB 位图（性能问题）。
 - 全局无锁状态泛滥：`sht_img/xwmii/ms_dec/first_button/...`。
 
 #### `user/` —— 用户态（质量梯队落差最大）
@@ -682,8 +682,8 @@ efi_main ──> 协议(GOP/SFSP/LIP/SPP/BAT) ──> 300ms 等 DELETE 引导菜
 | **strtol 算法** | `kernel/krlibc.cpp` 的 `strtol` | 90% | ⭐ 与 musl 源码实际比对后确认：本地为经典 `cutoff/cutlim` 溢出防护算法（BSD/glibc 一脉的教科书实现），与 musl 的查表 `intscan` 结构不同 |
 | **strerror 文案** | `user/xapi/errno.cpp` | 90% | ⭐ 文案为 POSIX 标准错误串（glibc/musl/BSD 一致），实现为 case-by-case switch |
 | **musl `__syscall_ret` ABI 惯用法** | `user/xapi/posix_ret.cpp __xposix_ret`（`-4095` 约定） | 95% | ⭐ ABI 层面确认（musl 的 `-4096..-1` errno 约定，行为级一致，非逐字拷贝） |
-| **Haribote《30天OS》** | **概念/命名影响**：图层系统（sheet_num"图层数量-1"、lift_sheet、刷新/置顶机制）；`cp537.cpp` 的 `s/v/_/e` 位宏直接移植 | 75% | ⭐ 本次复核：**SHEET 结构/hankaku 字库/鼠标光标逐字节均 ≠ Haribote**（本地为链表式新设计与不同字体），血统仅成立在概念与命名层；cp537 为直接移植（项目自标注） |
-| **MikanOS《ゼロから》** | **FrameBufferConfig 结构逐字段一致**；`CalcLoadAddressRange`/`CopyLoadSegments` 函数同名同逻辑；`KernelMain(const FrameBufferConfig&)` 启动约定 | 95% | ⭐ 已与 `uchan-nos/mikanos` 官方源码逐字段比对证实（见 §5.4） |
+| **Haribote《30天OS》** | **概念/命名影响**：图层系统（sheet_num"图层数量-1"、lift_sheet、刷新/置顶机制）；`cp537.cpp` 的 `s/v/_/e` 位宏直接移植 | 75% | ⭐ 本次复核：**SHEET 结构/鼠标光标逐字节 ≠ Haribote**（本地为链表式新设计与不同光标）；**hankaku 字库实为 MikanOS 同款（0% 差异）**；血统仅成立在概念与命名层；cp537 为直接移植（项目自标注） |
+| **MikanOS《ゼロから》** | **FrameBufferConfig 结构逐字段一致**；`CalcLoadAddressRange`/`CopyLoadSegments` 函数同名同逻辑；`KernelMain(const FrameBufferConfig&)` 启动约定；**hankaku 字库逐字节一致** | 95% | ⭐ 已与 `uchan-nos/mikanos` 官方源码逐字段比对证实（见 §5.4） |
 | **于渊《自己动手写操作系统》** | 2023 年树布局 boot/drivers/gui/include/kernel/lib + 早期 commit | 85% | 📖 历史布局证据（2023 树快照 `[git]`） |
 | **Linux Kernel** | EEVDF/VMA/zones/EXPORT_SYMBOL/ksymtab/capget/procfs；注释掉的 fs.cpp 引用 `init_task_union` | 90% | 🔍 概念与命名高度吻合；注释化石 `[代码]` |
 | **glibc** | `include/elf.h` 原版（版权头）；`__ctype_b_loc` 符号 | 95% | ⭐ elf.h 为 glibc 原版（自带版权/THIRD_PARTY_NOTICES 自认） |
@@ -729,7 +729,8 @@ efi_main ──> 协议(GOP/SFSP/LIP/SPP/BAT) ──> 300ms 等 DELETE 引导菜
 | **MikanOS `FrameBufferConfig`** | 与 `uchan-nos/mikanos` 官方 `kernel/frame_buffer_config.hpp` 逐字段比对 | ✅ **结构逐字段一致**（frame_buffer / pixels_per_scan_line / horizontal_resolution / vertical_resolution / pixel_format），仅类型名 UINT8/uint8_t 之差 |
 | **MikanOS ELF 加载** | 与官方 `MikanLoaderPkg/Main.c` 逐行比对 | ✅ **直接移植**：`CalcLoadAddressRange` 归一化后 **100.0% 一致**（LCS 225/225），`CopyLoadSegments` **99.4% 一致**（LCS 317/319，仅 `SetMem(ptr,size,0)` vs `xmemset(ptr,0,size)` 参数顺序之差）；差异仅为 EFI 库调用改名（CopyMem/SetMem→xmemcpy/xmemset）、宏展开（MAX_UINT64→字面量）、代码风格与中文注释；`KernelMain(const FrameBufferConfig&)` 启动约定同源 |
 | **Haribote SHEET 结构** | 与《30天OS》harib27f `bootpack.h`/`sheet.c` 比对 | ⚠️ XJ380 为**链表式全新设计**（front/buffer/bx/by/width/height/next），非 Haribote `{buf,bxsize,bysize,vx0,vy0,col_inv,height,flags,ctl,task}` 数组结构——仅概念/命名影响（sheet_num"图层数量-1"、lift_sheet、刷新/置顶） |
-| **Haribote hankaku 字库** | 解析《30天OS》`hankaku.txt`（`.`/`*` 点阵 → 4096 字节）逐字节比对 XJ380 `font/hankaku.bin` | ❌ **4096 字节中 2394 处不同（58.4%）**；'A'/'a'/笑脸等字符造型明显不同——**非同款字库** |
+| **XJ380 hankaku 字库来源** | 官方 `makefont.exe`（《30天OS》工具）跑 Haribote `hankaku.txt` 产出 haribote.bin，与 MikanOS `kernel/hankaku.txt`（`@` 点阵）、XJ380 `font/hankaku.bin` 三方逐字节比对 | ✅ **XJ380 = MikanOS（0/4096 不同，100% 一致）**；XJ380 vs makefont(Haribote) = 2394/4096 不同（58.4%）→ **字库来自 MikanOS，非《30天OS》** |
+| **Haribote hankaku 字库** | 解析《30天OS》`hankaku.txt`（`.`/`*` 点阵 → 4096 字节）逐字节比对 XJ380 `font/hankaku.bin` | ❌ **4096 字节中 2394 处不同（58.4%）**；'A'/'a'/笑脸等字符造型明显不同——**非同款字库**（XJ380 实为 MikanOS 同款） |
 | **Haribote 鼠标光标** | 与《30天OS》`graphic.c` 16×16 `*`/`O` 光标比对 | ❌ XJ380 为 22×11 `@`/`w` 光标，非 Haribote（也非 MikanOS 的 `@`/`.` 光标） |
 | **cp537.cpp** | 与《30天OS》CP537 演示比对 | ✅ `s/v/_/e` 位宏（`#define s ((((((((((0`）为川合秀実 CP537 的标志性技巧，直接移植（项目自标注） |
 | `__xposix_ret` | 本地源码 + musl ABI 约定 | ✅ musl `__syscall_ret` 惯用法（-4095 约定） |
